@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 namespace TTY_POKER
 {
@@ -28,27 +30,20 @@ namespace TTY_POKER
             King = 13,
             Ace
         }
-        public class Card {
-            public Suit suit;
-            public Rank number;
-            public Card(Suit suit, Rank number) {
-                this.suit = suit;
-                this.number = number;
-
-            }
+        public class Card(Suit suit, Rank number)
+        {
+            public Suit suit = suit;
+            public Rank number = number;
         }
 
-        public class Player {
-            public string username;
-            public int money;
-            public Player(string username, int money) {
-                this.username = username;
-                this.money = money;
-            }
+        public class Player(string username, int money)
+        {
+            public string username = username;
+            public int money = money;
         }
 
         public static void Menu() {
-            string username = String.Empty;
+            string username = "bababooey";
             bool quit = false;
             while(!quit) {
                 Console.WriteLine("Welcome to tty-poker! " + username);
@@ -66,10 +61,10 @@ namespace TTY_POKER
                     UserManagement();
                     break;
                     case 2:
-                    CreateLobby();
+                    CreateLobby(username);
                     break;
                     case 3:
-                    JoinLobby();
+                    JoinLobby(username);
                     break;
                     case 4:
                     Leaderboards();
@@ -87,13 +82,16 @@ namespace TTY_POKER
             throw new NotImplementedException();
         }
 
-        private static void JoinLobby()
+        private static void JoinLobby(string username)
         {
-            System.Console.Write("Enter host IP: ");
+            Console.Write("Enter host IP: ");
             IPAddress hostIp = IPAddress.Parse(Console.ReadLine());
-            System.Console.WriteLine("Enter port: ");
+            Console.WriteLine("Enter port: ");
             int port = int.Parse(Console.ReadLine());
-        
+            Server client = new Server(port);
+            string message = username + "-" + Server.FetchIP();
+            client.WriteMessage(hostIp, message);
+            
         }
 
         private static void UserManagement()
@@ -101,42 +99,34 @@ namespace TTY_POKER
             throw new NotImplementedException();
         }
 
-        private static void CreateLobby()
+        private static void CreateLobby(string username)
         {
-            List<string> players = new List<string>();
+            List<(string, IPAddress)> players = new List<(string, IPAddress)>();
             bool ready = false;
-            
-            int port = 3000;
+            Console.Write("Enter port: ");
+            int port = int.Parse(Console.ReadLine());
 
             Server server = new Server(port);
-            server.FetchIP();
-            System.Console.WriteLine(server.myIp);
+            players.Add((username, server.myIp));
+            Console.WriteLine("Your IP: " + server.myIp);
 
             server.startListening();
             System.Console.WriteLine("Server started!");
 
             Thread.Sleep(1000);
-            System.Console.WriteLine("Waiting for connection...");
+            string messageFromClient;
 
             while (!ready) {
-                server.AcceptClient();
+                Console.WriteLine("Waiting for connection...");
+                messageFromClient = server.ReadMessage();
+                string[] splitMsg = messageFromClient.Split('-');
+                Console.WriteLine(messageFromClient + " connected!");
+                players.Add((splitMsg[0], IPAddress.Parse(splitMsg[1])));
+                Console.WriteLine(players.Count + " players joined!");
+                    
+                
 
-                string messageFromClient = "";
-
-                try {
-                    server.ClientData();
-
-                    if (server.socketForClient.Connected) {
-                        messageFromClient = server.streamReader.ReadLine();
-                        System.Console.WriteLine(messageFromClient + " connected!");
-                        players.Add(messageFromClient);
-                        System.Console.WriteLine(players.Count);
-                    }
-                } catch {
-                    System.Console.WriteLine("No client connected");
-                }
-
-                System.Console.Write("Ready to start? [y/N] ");
+                Console.Write("Ready to start? [y/N] ");
                 ready = Console.ReadLine() == "y";     
             }
 
@@ -144,7 +134,7 @@ namespace TTY_POKER
                 
         }
 
-        private static void StartGame(List<string> players)
+        private static void StartGame(List<(string, IPAddress)> players)
         {
             throw new NotImplementedException();
         }

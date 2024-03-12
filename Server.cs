@@ -15,25 +15,22 @@ namespace TTY_POKER
         public StreamReader streamReader { get; set; }
         public StreamWriter streamWriter { get; set; }
         public Server(int port) {
-            FetchIP();
+            myIp = IPAddress.Parse(FetchIP());
             this.port = port;
         }
 
-        public void FetchIP() {
-            using (WebClient client = new WebClient())
-        {
-            try
+        public static string FetchIP() {
+            
+            string localIP = "";
+            foreach (IPAddress ip in Dns.GetHostAddresses(Dns.GetHostName()))
             {
-                string ipString = client.DownloadString("https://api.ipify.org");
-                myIp = IPAddress.Parse(ipString);
-                // Display your public IP address
-                //Console.WriteLine("Your public IP address is: " + ipString);
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    localIP = ip.ToString();
+                    break;
+                }
             }
-            catch (WebException ex)
-            {
-                Console.WriteLine("Failed to retrieve public IP address. Exception: " + ex.Message);
-            }
-        }
+            return localIP;
         }
 
 
@@ -43,7 +40,52 @@ namespace TTY_POKER
                 tcpListener = new TcpListener(myIp, port);
                 tcpListener.Start();
             } catch {
-                System.Console.WriteLine("Could not start");
+                Console.WriteLine("Could not start");
+            }
+        }
+
+        public string ReadMessage() 
+        {
+            AcceptClient();
+
+            string messageFromClient = "";
+
+            try {
+                ClientData();
+                if (socketForClient.Connected) {
+                    messageFromClient = streamReader.ReadLine();
+                    
+                }
+            } catch {
+                Console.WriteLine("No client connected");
+                throw;
+            }
+            Disconnect();
+            return messageFromClient;
+        }
+
+
+        public void WriteMessage(IPAddress host, string message) 
+        {
+            TcpClient client = new TcpClient();
+            client.Connect(host, port);
+            
+            try
+            {
+                networkStream = client.GetStream();
+                
+                streamWriter = new StreamWriter(networkStream);
+                streamWriter.WriteLine(message);
+                streamWriter.Flush();
+
+                networkStream.Close();
+                streamWriter.Close();
+            }
+            catch (Exception)
+            {
+                
+                Console.WriteLine("Failed to join the lobby! :(");
+                throw;
             }
         }
 
@@ -51,7 +93,7 @@ namespace TTY_POKER
             try {
                 socketForClient = tcpListener.AcceptSocket();
             } catch {
-                System.Console.WriteLine("Could not accept client");
+                Console.WriteLine("Could not accept client");
             }
         }
 

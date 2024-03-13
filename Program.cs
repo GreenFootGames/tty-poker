@@ -5,6 +5,8 @@ using System.Text;
 namespace TTY_POKER
 {
     class Program {
+
+        public static readonly IPAddress SERVER_IP = IPAddress.Parse("");
         public enum Suit
         {
             Hearts,
@@ -40,6 +42,7 @@ namespace TTY_POKER
         {
             public string username = username;
             public int money = money;
+            
         }
 
         public static void Menu() {
@@ -86,15 +89,92 @@ namespace TTY_POKER
         {
             Console.Write("Enter host IP: ");
             IPAddress hostIp = IPAddress.Parse(Console.ReadLine());
-            Console.WriteLine("Enter port: ");
+            Console.Write("Enter port: ");
             int port = int.Parse(Console.ReadLine());
             Server client = new Server(port);
             string message = username + "-" + Server.FetchIP();
             client.WriteMessage(hostIp, message);
+            client.startListening();
+            Console.WriteLine("Waiting for host to start...");
+            string startMessage = client.ReadMessage();
+            if (startMessage == "start")
+            {
+                ClientPlay(username);
+            } else {
+                Console.WriteLine("Host encountered an error! :(");
+            }
             
         }
 
-        private static void UserManagement()
+        private static void ClientPlay(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static string UserManagement()
+        {
+            string username = String.Empty;
+            
+            int input = int.Parse(Console.ReadLine());
+            while (username == String.Empty) {
+                Console.WriteLine("What do you wish to do?");
+                Console.WriteLine("1 - Login");
+                Console.WriteLine("2 - Register");
+                Console.Write(": ");
+                switch (input) {
+                case 1:
+                Login();
+                break;
+
+                case 2:
+                Register();
+                break;
+                }
+            }
+            
+            return username;
+        }
+
+        private static void Register()
+        {
+            bool uniqueUsername = false;
+            Server client = new Server(3000);
+            Console.Title = "TTY-POKER - Registration";
+            string username, password;
+            do
+            {
+                Console.Write("Username: ");
+                username = Console.ReadLine();
+                client.WriteMessage(SERVER_IP, "check-" + username);
+                client.startListening();
+                Console.WriteLine("Checking username...");
+                if (client.ReadMessage() == "y") {
+                    uniqueUsername = true;
+                } else {
+                    Console.WriteLine("The username is already taken! :(");
+                }
+            } while (!uniqueUsername);
+            bool match = false;
+            do
+            {
+                Console.Write("Password: ");
+                password = Console.ReadLine();
+                Console.Write("Confirm password: ");
+                if (Console.ReadLine() == password) {
+                    match = true;
+                }  else {
+                    Console.WriteLine("The two passwords don't match! :(");
+                }
+            } while (!match);
+            
+            client.WriteMessage(SERVER_IP, "new-" + username + "-" + password);
+            client.startListening();
+            
+            Console.WriteLine(client.ReadMessage());
+
+        }
+
+        private static void Login()
         {
             throw new NotImplementedException();
         }
@@ -130,13 +210,15 @@ namespace TTY_POKER
                 ready = Console.ReadLine() == "y";     
             }
 
-            StartGame(players);
+            StartGame(players, server);
                 
         }
 
-        private static void StartGame(List<(string, IPAddress)> players)
+        private static void StartGame(List<(string, IPAddress)> players, Server host)
         {
-            throw new NotImplementedException();
+            for (int i = 1; i < players.Count; i++) {
+                host.WriteMessage(players[i].Item2, "start");
+            }
         }
 
         public static void Main() {

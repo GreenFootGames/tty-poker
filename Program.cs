@@ -92,11 +92,10 @@ namespace TTY_POKER
             Console.Write("Enter port: ");
             int port = int.Parse(Console.ReadLine());
             Server client = new Server(port);
-            string message = username + "-" + Server.FetchIP();
-            client.WriteMessage(hostIp, message);
+            client.WriteMessage(hostIp, username);
             client.startListening();
             Console.WriteLine("Waiting for host to start...");
-            string startMessage = client.ReadMessage();
+            string startMessage = client.ReadMessage().Item1;
             if (startMessage == "start")
             {
                 ClientPlay(username);
@@ -148,7 +147,7 @@ namespace TTY_POKER
                 client.WriteMessage(SERVER_IP, "check-" + username);
                 client.startListening();
                 Console.WriteLine("Checking username...");
-                if (client.ReadMessage() == "y") {
+                if (client.ReadMessage().Item1 == "y") {
                     uniqueUsername = true;
                 } else {
                     Console.WriteLine("The username is already taken! :(");
@@ -195,13 +194,14 @@ namespace TTY_POKER
 
             Thread.Sleep(1000);
             string messageFromClient;
+            IPAddress clientIp;
 
             while (!ready) {
                 Console.WriteLine("Waiting for connection...");
-                messageFromClient = server.ReadMessage();
-                string[] splitMsg = messageFromClient.Split('-');
+                (messageFromClient, clientIp) = server.ReadMessage();
+                
                 Console.WriteLine(messageFromClient + " connected!");
-                players.Add((splitMsg[0], IPAddress.Parse(splitMsg[1])));
+                players.Add((messageFromClient, clientIp));
                 Console.WriteLine(players.Count + " players joined!");
                     
                 

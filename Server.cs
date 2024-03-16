@@ -44,16 +44,18 @@ namespace TTY_POKER
             }
         }
 
-        public string ReadMessage() 
+        public (string, IPAddress) ReadMessage() 
         {
             AcceptClient();
 
             string messageFromClient = "";
+            IPAddress clientIp = new(0);
 
             try {
                 ClientData();
                 if (socketForClient.Connected) {
                     messageFromClient = streamReader.ReadLine();
+                    clientIp = ((IPEndPoint)socketForClient.RemoteEndPoint).Address;
                     
                 }
             } catch {
@@ -61,7 +63,7 @@ namespace TTY_POKER
                 throw;
             }
             Disconnect();
-            return messageFromClient;
+            return (messageFromClient, clientIp);
         }
 
 

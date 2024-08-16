@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "tty-poker-client/1.0.0": {
+        "runtime": {
+          "tty-poker-client.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "tty-poker-client/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,14 @@
+/home/joe/Projects/tty-poker-client/bin/Debug/net8.0/tty-poker-client
+/home/joe/Projects/tty-poker-client/bin/Debug/net8.0/tty-poker-client.deps.json
+/home/joe/Projects/tty-poker-client/bin/Debug/net8.0/tty-poker-client.runtimeconfig.json
+/home/joe/Projects/tty-poker-client/bin/Debug/net8.0/tty-poker-client.dll
+/home/joe/Projects/tty-poker-client/bin/Debug/net8.0/tty-poker-client.pdb
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.GeneratedMSBuildEditorConfig.editorconfig
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.AssemblyInfoInputs.cache
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.AssemblyInfo.cs
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.csproj.CoreCompileInputs.cache
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.dll
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/refint/tty-poker-client.dll
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.pdb
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.genruntimeconfig.cache
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/ref/tty-poker-client.dll

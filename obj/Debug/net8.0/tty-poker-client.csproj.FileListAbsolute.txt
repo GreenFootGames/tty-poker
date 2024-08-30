@@ -12,3 +12,4 @@
 /home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.pdb
 /home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.genruntimeconfig.cache
 /home/joe/Projects/tty-poker-client/obj/Debug/net8.0/ref/tty-poker-client.dll
+/home/joe/Projects/tty-poker-client/obj/Debug/net8.0/tty-poker-client.sourcelink.json

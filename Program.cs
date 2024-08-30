@@ -1,10 +1,18 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading.Channels;
 
 namespace TTY_POKER_CLIENT
 {
     class Program
     {
+        static IPAddress serverIp = IPAddress.Parse("127.0.0.1");
+        const int port = 12345;
+        static string Username = "<user>";
+        static long Money = 0;
+
         class Card(int rank, int suit)
         {
             public int Rank { get; set; } = rank;
@@ -207,9 +215,10 @@ namespace TTY_POKER_CLIENT
             }
 
         }
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            MainMenu();
+            
+            await MainMenu();
             //PlayMatch(2, 3);
             /* HAND CHECKER DEBUGGING
             Card card1 = new Card(1, 2);
@@ -227,66 +236,341 @@ namespace TTY_POKER_CLIENT
         }
 
 
-        static void MainMenu() {
-            Console.Clear();
-            Console.WriteLine("Welcome to tty-poker!\t<user>");
-            Console.WriteLine("1 - Login");
-            Console.WriteLine("2 - Registration");
-            Console.WriteLine("3 - Continue as Guest");
-            Console.WriteLine("4 - Quit");
-            int input = 1;
-            Console.Write(":" + input);
-            Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
-            ConsoleKeyInfo keyInfo;
-
-                        // Continuously read each key press
-            while ((keyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
-            {   
-                if (keyInfo.Key == ConsoleKey.UpArrow && input < 4) {
-                    input++;
-                }
-                if (keyInfo.Key == ConsoleKey.DownArrow && input > 1) {
-                    input--;
-                }
-                // Display the key pressed
-                
-                Console.Write(input);
-                Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
-            }
-            switch (input)
-            {
-                case 1:
-                    Login();
-                    break;
-                case 2:
-                    Registration();
-                    break;
-                case 3:
-                    GenerateGuest();
-                    break;
-                case 4:
+        static async Task MainMenu() {
+            bool playing = true;
+            while (playing) {
+                if (Username == "<user>") {
                     Console.Clear();
-                    return;
+                    Console.WriteLine("Welcome to tty-poker!");
+                    Console.WriteLine("1 - Login");
+                    Console.WriteLine("2 - Registration");
+                    //Console.WriteLine("3 - Continue as Guest");
+                    Console.WriteLine("3 - Quit");
+                    int input = 1;
+                    Console.Write(":" + input);
+                    Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
+                    ConsoleKeyInfo keyInfo;
+
+                    // Continuously read each key press
+                    while ((keyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+                    {   
+                        if (keyInfo.Key == ConsoleKey.UpArrow && input < 3) {
+                            input++;
+                        }
+                        if (keyInfo.Key == ConsoleKey.DownArrow && input > 1) {
+                            input--;
+                        }
+                        // Display the key pressed
+
+                        Console.Write(input);
+                        Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
+                    }
+                    Console.Clear();
+                    switch (input)
+                    {
+                        case 1:
+                            Login();
+                            break;
+                        case 2:
+                            Registration();
+                            break;
+                        case 3:
+                            //GenerateGuest();
+                            Console.Clear();
+                            playing = false;
+                            break;
+                        /*
+                        case 4:
+
+                            break;
+                        */
+                    }
+                } else {
+                    Console.Clear();
+                    Console.WriteLine($"Welcome to tty-poker, {Username}!\tMoney: {Money}$");
+                    Console.WriteLine("1 - Join a match");
+                    Console.WriteLine("2 - Host a match");
+                    Console.WriteLine("3 - Logout");
+                    Console.WriteLine("4 - Quit");
+
+                    int input = 1;
+                    Console.Write(":" + input);
+                    Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
+                    ConsoleKeyInfo keyInfo;
+
+                    // Continuously read each key press
+                    while ((keyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+                    {   
+                        if (keyInfo.Key == ConsoleKey.UpArrow && input < 4) {
+                            input++;
+                        }
+                        if (keyInfo.Key == ConsoleKey.DownArrow && input > 1) {
+                            input--;
+                        }
+                        // Display the key pressed
+
+                        Console.Write(input);
+                        Console.SetCursorPosition(Console.CursorLeft - input.ToString().Length, Console.CursorTop);
+                    }
+                    Console.Clear();
+                    switch (input)
+                    {
+                        case 1:
+                            Join();
+                            break;
+                        case 2:
+                            //throw new Exception();
+                            await Host();
+                            break;
+                        case 3:
+                            Logout();
+                            break;
+                        
+                        case 4:
+                            Console.Clear();
+                            playing = false;
+                            break;
+                        
+                    }
+                }
+                
+            
             }
+        }
+
+        private static void Logout()
+        {
+            Username = "<user>";
+            Money = 0;
+        }
+
+        private static void Join()
+        {
+            TcpClient client = new TcpClient();
+            Console.Write("Enter lobby code: ");
+            string code = Console.ReadLine()!;
+            client.Connect(serverIp, port);
+            NetworkStream stream = client.GetStream();
+            byte[] message = Encoding.UTF8.GetBytes(code);
+            stream.Write(message);
+
+
+        }
+
+        private static async Task Host()
+        {
+            TcpClient client = new TcpClient();
+            Console.WriteLine("Creating lobby...");
+            client.Connect(serverIp, port);
+            NetworkStream stream = client.GetStream();
+            byte[] message = Encoding.UTF8.GetBytes($"3-{Username}");
+            stream.Write(message, 0, message.Length);
+            byte[] response = new byte[1024];
+            stream.Read(response);
+            TrimTrailingNullBytes(response);
+            string code = Encoding.UTF8.GetString(response);
+            Console.Clear();
+            System.Console.WriteLine("Lobby code: " + code);
+            List<(string, long)> players = new List<(string, long)>() { (Username, Money) };
+            int playerCount = players.Count;
+            bool first = true;
+
+            using (CancellationTokenSource cts = new CancellationTokenSource())
+            {
+                Task keyListenerTask = ListenForEscapeKeyAsync(cts);
+                Task serverListenerTask = ListenForPlayerUpdates(cts, stream, players);
+
+
+                // Main loop that does some work
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    //System.Console.Write("1\t");
+                    if (playerCount < players.Count || first) {
+                        first = false;
+                        playerCount = players.Count;
+                        Console.SetCursorPosition(0, 1);
+                        Console.Write(new string(' ', Console.WindowWidth));
+                        Console.SetCursorPosition(0, 1);
+                        for (int i = 0; i < players.Count; i++)
+                        {
+                            System.Console.Write(i + 1 + "-" + players[i].Item1);
+                        }
+                        Console.Write("\nReady? (Press Enter): ");
+                    }
+                     // Simulate work with a delay
+                    await Task.Delay(100);
+                }
+
+                // Wait for the key listener to complete
+                await keyListenerTask;
+                await serverListenerTask; 
+            }
+            Console.WriteLine("\nStarting Game.......");
+            await Task.Delay(300);
+            // TODO: Implement Match
+            //PlayMatch(players.Count, 3);
+
+            
+        }
+
+        private static async Task ListenForPlayerUpdates(CancellationTokenSource cts, NetworkStream stream, List<(string, long)> players)
+        {
+            await Task.Run(async () => {
+                while(!cts.IsCancellationRequested) {
+                    byte[] msgBytes = new byte[1024];
+                    stream.Read(msgBytes);
+                    msgBytes = TrimTrailingNullBytes(msgBytes);
+                    foreach (var item in msgBytes)
+                    {
+                        System.Console.Write(item + "\t");
+                    }
+                    if (msgBytes.Length > 0) {
+                        string[] data = Encoding.UTF8.GetString(msgBytes).Split('-');
+                        players.Add((data[0], long.Parse(data[1])));
+                        System.Console.WriteLine("mesg: ");
+                    }
+                }
+            
+            
+            });
+        }
+
+        private static async Task ListenForEscapeKeyAsync(CancellationTokenSource cts)
+        {
+            await Task.Run(() =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Enter)
+                    {
+                        //Console.WriteLine("Escape key pressed! Stopping the loop...");
+                        cts.Cancel();
+                    }
+                }
+            });
         }
 
         private static void Login()
         {
-            throw new NotImplementedException();
+            byte[] response = new byte[1024];
+            string username = "VALUE";
+            string password = "VALUE";
+            bool invalidCombo;
+            do
+            {
+                TcpClient client = new TcpClient();
+                Console.WriteLine("--- LOGIN ---");
+                bool validInputs = false;
+                while (!validInputs) { 
+                    Console.SetCursorPosition(0, 1);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, 1);
+                    Console.Write("Username: ");
+                    username = Console.ReadLine()!;
+                    if (username.Length > 0) {
+                        validInputs = true;
+                    }
+                }
+                validInputs = false;
+                while (!validInputs) { 
+                    Console.SetCursorPosition(0, 2);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, 2);
+                    Console.Write("Password: ");
+                    password = Console.ReadLine()!;
+                    if (password.Length > 0) {
+                        validInputs = true;
+                    }
+                }
+
+                Console.WriteLine("Verifying login...");
+                client.Connect(serverIp, port);
+                NetworkStream stream = client.GetStream();
+                byte[] message = Encoding.UTF8.GetBytes($"1-{username}-{password}");
+                stream.Write(message, 0, message.Length);
+                //byte[] response = new byte[1];
+                stream.Read(response);
+
+                if (response[0] != 0) {
+                    invalidCombo = false;
+                } else {
+                    invalidCombo = true;
+                    Console.Clear();
+                }
+                client.Close();
+            } while (invalidCombo);
+            Username = username;
+            Money = long.Parse(Encoding.UTF8.GetString(response));
         }
 
 
         private static void Registration()
         {
-            throw new NotImplementedException();
+            string username = "VALUE";
+            string password = "VALUE";
+            bool takenUsername;
+            do
+            {
+                TcpClient client = new TcpClient();
+                Console.WriteLine("--- REGISTER ---");
+                bool validInputs = false;
+                
+                while (!validInputs) { 
+                    Console.SetCursorPosition(0, 1);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, 1);
+                    Console.Write("Username: ");
+                    username = Console.ReadLine()!;
+                    if (username.Length > 0) {
+                        validInputs = true;
+                    }
+                }
+                validInputs = false;
+                while (!validInputs) { 
+                    Console.SetCursorPosition(0, 2);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, 2);
+                    Console.Write("Password: ");
+                    password = Console.ReadLine()!;
+                    if (password.Length > 0) {
+                        validInputs = true;
+                    }
+                }
+
+                Console.WriteLine("Verifying username...");
+                client.Connect(serverIp, port);
+                NetworkStream stream = client.GetStream();
+                byte[] message = Encoding.UTF8.GetBytes("2-" + username + "-" + password);
+                stream.Write(message, 0, message.Length);
+                byte[] response = new byte[1];
+                stream.Read(response);
+                // 49 = "1" in UTF-8
+                if (response[0] == 1) {
+                    takenUsername = false;
+                } else {
+                    takenUsername = true;
+                    Console.Clear();
+                }
+                client.Close();
+            } while (takenUsername);
+            Username = username;
+            Money = 40;
         }
 
-
+        /* Not sure if it's a good idea
         private static void GenerateGuest()
         {
-            throw new NotImplementedException();
+            TcpClient client = new TcpClient();
+            Console.WriteLine("Generating guest...");
+            client.Connect(serverIp, port);
+            NetworkStream stream = client.GetStream();
+            byte[] message = Encoding.UTF8.GetBytes("3");
+            stream.Write(message, 0, message.Length);
+            byte[] response = new byte[1024];
+            stream.Read(response);
+            Money = 40;
         }
-
+        */
         
         static int PlayMatch(int playerCount, int startingCardCount) {
             // Player Money
@@ -518,6 +802,23 @@ namespace TTY_POKER_CLIENT
                     l[i] = 0;
                 }
             }
+        }
+
+
+        static byte[] TrimTrailingNullBytes(byte[] byteArray)
+        {
+            // Find the index of the last non-null byte
+            int lastNonNullIndex = byteArray.Length - 1;
+            while (lastNonNullIndex >= 0 && byteArray[lastNonNullIndex] == 0)
+            {
+                lastNonNullIndex--;
+            }
+
+            // Create a new byte array with the trimmed length
+            byte[] trimmedArray = new byte[lastNonNullIndex + 1];
+            Array.Copy(byteArray, 0, trimmedArray, 0, trimmedArray.Length);
+
+            return trimmedArray;
         }
     }
 }
